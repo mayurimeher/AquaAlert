@@ -1,0 +1,1394 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f8fb">
+  <title>AquaAlert — Waterlogging Dashboard</title>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #12314a;
+      --blue: #1769aa;
+      --teal: #12a89d;
+      --ink: #203447;
+      --muted: #6d8292;
+      --line: #e5edf2;
+      --surface: #fff;
+      --canvas: #f4f8fb;
+      --shadow: 0 8px 28px rgba(24, 58, 82, .07);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    button, select, input, textarea { font: inherit; }
+    button, a, select { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 20;
+      display: flex;
+      width: 250px;
+      flex-direction: column;
+      padding: 26px 18px 20px;
+      background: var(--navy);
+      color: #d9e8f1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px 30px;
+      color: white;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border-radius: 13px;
+      background: linear-gradient(145deg, #19c6b4, #1688bf);
+      font-size: 24px;
+    }
+
+    .brand-name { font-size: 18px; font-weight: 750; }
+    .brand-subtitle { display: block; margin-top: 2px; color: #a8c1d0; font-size: 11px; }
+
+    .nav-label {
+      margin: 2px 12px 12px;
+      color: #91adbf;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .nav-list { display: grid; gap: 6px; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 46px;
+      padding: 0 13px;
+      border-radius: 11px;
+      color: #c3d6e1;
+      font-size: 13px;
+      transition: background .2s;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: rgba(255, 255, 255, .11);
+      color: white;
+    }
+
+    .nav-link.active { box-shadow: inset 3px 0 #27c5b2; }
+
+    .sidebar-note {
+      margin-top: auto;
+      padding: 15px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,.055);
+    }
+
+    .sidebar-note strong { color: white; font-size: 12px; }
+    .sidebar-note p { color: #adc4d1; font-size: 11px; line-height: 1.55; }
+
+    .main-area { min-height: 100vh; margin-left: 250px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      min-height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 14px 34px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .page-heading { margin: 0; color: var(--navy); font-size: 18px; }
+    .page-subheading { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+
+    .location-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+    }
+
+    .location-wrap label { color: var(--muted); font-size: 11px; }
+    .location-wrap select {
+      max-width: 180px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .demo-pill {
+      padding: 7px 10px;
+      border: 1px solid #c8eee9;
+      border-radius: 999px;
+      background: #edfbf8;
+      color: #16877e;
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+      color: var(--navy);
+    }
+
+    .content { max-width: 1500px; margin: auto; padding: 29px 34px 42px; }
+
+    .welcome-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .welcome-row h2 { margin: 0; color: var(--navy); font-size: 23px; }
+    .welcome-row p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .updated-note { color: var(--muted); font-size: 11px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 27px 0 13px;
+    }
+
+    .section-title h3 { margin: 0; color: var(--navy); font-size: 15px; }
+    .section-title span { color: var(--muted); font-size: 11px; }
+
+    .weather-grid, .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .weather-card, .panel, .risk-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .weather-card { min-height: 145px; padding: 19px; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; }
+    .card-label { color: var(--muted); font-size: 11px; font-weight: 600; }
+
+    .card-icon {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 11px;
+      background: #edf7fc;
+      color: var(--blue);
+      font-size: 19px;
+    }
+
+    .card-icon.teal { background: #e9f9f6; color: #14978d; }
+    .card-icon.amber { background: #fff6e8; color: #d28a1b; }
+    .metric { margin-top: 12px; color: var(--navy); font-size: 27px; font-weight: 750; }
+    .metric small { font-size: 13px; }
+    .metric-caption { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .risk-card { display: flex; align-items: center; gap: 13px; padding: 15px 17px; }
+    .risk-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; }
+    .risk-dot.low { background: #27ad78; }
+    .risk-dot.medium { background: #e3a52b; }
+    .risk-dot.high { background: #e56767; }
+    .risk-card strong { display: block; color: var(--navy); font-size: 12px; }
+    .risk-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(290px, .9fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .panel { overflow: hidden; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 17px 19px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h3 { margin: 0; color: var(--navy); font-size: 13px; }
+    .panel-header p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+
+    .map-placeholder {
+      position: relative;
+      display: grid;
+      min-height: 330px;
+      place-items: center;
+      overflow: hidden;
+      background-color: #edf5f5;
+      background-image:
+        linear-gradient(28deg, transparent 46%, rgba(255,255,255,.85) 47%, rgba(255,255,255,.85) 50%, transparent 51%),
+        linear-gradient(112deg, transparent 39%, rgba(255,255,255,.8) 40%, rgba(255,255,255,.8) 43%, transparent 44%),
+        linear-gradient(rgba(54,153,151,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(54,153,151,.07) 1px, transparent 1px);
+      background-size: 210px 150px, 240px 190px, 35px 35px, 35px 35px;
+    }
+
+    .map-message {
+      width: min(340px, calc(100% - 36px));
+      padding: 24px;
+      border: 1px solid white;
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .map-message h4 { margin: 0; color: var(--navy); font-size: 14px; }
+    .map-message p { color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .map-message .demo-pill { display: inline-block; margin-top: 14px; }
+
+    .reports-list { padding: 2px 18px 8px; }
+
+    .report-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid #edf1f4;
+    }
+
+    .report-item:last-child { border-bottom: 0; }
+
+    .report-marker {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: none;
+      place-items: center;
+      border-radius: 11px;
+      background: #fff2ed;
+      font-size: 17px;
+    }
+
+    .report-info { min-width: 0; flex: 1; }
+    .report-info strong { display: block; overflow-wrap: anywhere; color: var(--navy); font-size: 11px; }
+    .report-info p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .report-time { display: block; margin-top: 5px; color: #95a4ae; font-size: 9px; }
+
+    .severity {
+      align-self: flex-start;
+      padding: 5px 7px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .severity.high { background: #fff0ef; color: #c75550; }
+    .severity.medium { background: #fff5e3; color: #b77a19; }
+    .severity.low { background: #eaf8f0; color: #23845d; }
+
+    .form-panel, .history-panel { margin-top: 16px; }
+
+    .report-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 17px 19px 19px;
+    }
+
+    .field { display: grid; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: var(--ink); font-size: 10px; font-weight: 650; }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      min-height: 38px;
+      padding: 9px 10px;
+      border: 1px solid #dfe8ed;
+      border-radius: 9px;
+      outline: none;
+      background: white;
+      color: var(--ink);
+      font-size: 11px;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: #55b9b1;
+      box-shadow: 0 0 0 3px rgba(18,168,157,.12);
+    }
+
+    .field textarea { min-height: 68px; resize: vertical; }
+
+    .submit-row {
+      display: flex;
+      grid-column: 1 / -1;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .route-planner {
+      padding: 15px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .route-planner h4 { margin: 0; color: var(--navy); font-size: 12px; }
+    .route-planner-note, .route-plan-status, .route-result {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .route-planner-note { margin: 6px 0 12px; }
+    .hotspot-panel { margin-top: 16px; }
+    .hotspot-content { padding: 12px 18px 16px; color: var(--muted); font-size: 11px; }
+    .hotspot-entry { padding: 9px 0; border-top: 1px solid #e7eef2; }
+    .hotspot-entry:first-child { border-top: 0; }
+
+    .route-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      align-items: end;
+      gap: 10px;
+    }
+
+    .route-controls label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .route-controls select {
+      width: 100%;
+      min-height: 36px;
+      padding: 7px 9px;
+      border: 1px solid #dfe8ed;
+      border-radius: 9px;
+      background: white;
+      color: var(--ink);
+      font-size: 10px;
+    }
+
+    .route-plan-status { margin: 11px 0 0; }
+    .route-results { display: grid; gap: 4px; margin-top: 8px; }
+    .route-result { margin: 0; }
+
+    .primary-button {
+      min-height: 38px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--blue);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .primary-button:hover { background: #10598f; }
+    .primary-button:disabled { cursor: wait; opacity: .65; }
+    .form-feedback { color: #16877e; font-size: 11px; }
+    .form-feedback.error { color: #c75550; }
+
+    .demo-footnote {
+      padding: 0 19px 17px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .history-content {
+      display: grid;
+      gap: 10px;
+      padding: 16px 19px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .history-entry {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+    }
+
+    :focus-visible { outline: 3px solid #51b9b1; outline-offset: 3px; }
+
+    @media (max-width: 1050px) {
+      .sidebar { width: 220px; }
+      .main-area { margin-left: 220px; }
+      .content { padding-right: 24px; padding-left: 24px; }
+      .topbar { padding-right: 24px; padding-left: 24px; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1.35fr) minmax(270px, .9fr); }
+    }
+
+    @media (max-width: 800px) {
+      .sidebar { width: 250px; transform: translateX(-100%); transition: transform .25s ease; box-shadow: 18px 0 35px rgba(14,42,61,.15); }
+      body.nav-open .sidebar { transform: translateX(0); }
+      body.nav-open::after { position: fixed; z-index: 15; inset: 0; background: rgba(15,37,52,.4); content: ""; }
+      .main-area { margin-left: 0; }
+      .menu-toggle { display: flex; }
+      .topbar { min-height: 68px; padding: 12px 20px; }
+      .content { padding: 24px 20px 36px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .reports-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+    }
+
+    @media (max-width: 560px) {
+      .topbar { gap: 9px; padding: 11px 14px; }
+      .topbar-left { gap: 9px; }
+      .page-heading { font-size: 15px; }
+      .page-subheading { font-size: 10px; }
+      .location-wrap { gap: 6px; padding: 8px; }
+      .location-wrap label { display: none; }
+      .location-wrap select { max-width: 110px; font-size: 10px; }
+      .demo-pill { padding: 6px 8px; font-size: 9px; }
+      .topbar-right { gap: 7px; }
+      .content { padding: 21px 14px 30px; }
+      .welcome-row { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .welcome-row h2 { font-size: 21px; }
+      .weather-grid { grid-template-columns: 1fr; gap: 10px; }
+      .weather-card { min-height: auto; padding: 15px 17px; }
+      .metric { margin-top: 8px; font-size: 24px; }
+      .risk-grid { gap: 8px; }
+      .risk-card { align-items: flex-start; flex-direction: column; gap: 10px; padding: 13px 11px; }
+      .section-title { margin-top: 23px; }
+      .map-placeholder { min-height: 285px; }
+      .reports-list { grid-template-columns: 1fr; }
+      .report-form { grid-template-columns: 1fr; }
+      .field.full, .submit-row { grid-column: auto; }
+      .submit-row { align-items: flex-start; flex-direction: column; }
+      .route-controls { grid-template-columns: 1fr; }
+      .updated-note { white-space: normal; }
+    }
+  </style>
+  <link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+<style>
+  #waterloggingMap {
+    height: 350px;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+</style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#dashboard">
+        <span class="brand-mark">💧</span>
+        <span>
+          <span class="brand-name">AquaAlert</span>
+          <span class="brand-subtitle">Urban safety dashboard</span>
+        </span>
+      </a>
+
+      <p class="nav-label">Workspace</p>
+
+      <nav class="nav-list" aria-label="Dashboard sections">
+        <a class="nav-link active" href="#dashboard">▦ Dashboard</a>
+        <a class="nav-link" href="#risk-map">▧ Risk Map</a>
+        <a class="nav-link" href="#safe-routes">⌁ Safe Routes</a>
+        <a class="nav-link" href="#report-waterlogging">⚑ Report Waterlogging</a>
+        <a class="nav-link" href="#history">◷ History</a>
+      </nav>
+
+      <div class="sidebar-note">
+        <strong>Demo environment</strong>
+        <p>Weather data is fetched from Open-Meteo. Submitted waterlogging reports are saved in the project database.</p>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation menu">☰</button>
+          <div>
+            <h1 class="page-heading">AquaAlert</h1>
+            <p class="page-subheading">Urban Waterlogging Risk &amp; Safe-Route Planner</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="location-wrap">
+            <label for="locationSelect">Area</label>
+            <select id="locationSelect">
+                <option>Bengaluru, Karnataka</option>
+                <option>Mumbai, Maharashtra</option>
+                <option>Chennai, Tamil Nadu</option>
+              </select>
+            </div>
+            <span class="demo-pill">DEMO DATA</span>
+
+            <form action="/logout" method="post" style="margin: 0;">
+              <button type="submit"
+                style="padding: 8px 12px; border: 0; border-radius: 9px; background: #12314a; color: white; cursor: pointer; font-weight: 600;">
+                Logout
+              </button>
+            </form>
+        </div>
+      </header>
+
+      <main class="content" id="dashboard">
+        <div class="welcome-row">
+            <div>
+              <h2>City overview</h2>
+              <p>Sample conditions and community reports for your selected area.</p>
+            </div>
+            <span class="updated-note">Illustrative snapshot · Not live monitoring</span>
+        </div>
+
+        <div class="section-title">
+          <h3>Weather summary</h3>
+          <span id="weatherStatus">Connecting to live weather...</span>
+        </div>
+
+        <section class="weather-grid" aria-label="Demo weather summary">
+          <article class="weather-card">
+            <div class="card-top">
+              <span class="card-label">Rainfall (last 24 hours)</span>
+              <span class="card-icon">🌧️</span>
+            </div>
+           <div class="metric" id="rainfallValue">-- <small>mm</small></div>
+           <div class="metric-caption" id="rainfallCaption">Waiting for weather data...</div>
+          </article>
+
+          <article class="weather-card">
+            <div class="card-top">
+              <span class="card-label">Temperature</span>
+              <span class="card-icon amber">🌡️</span>
+            </div>
+       <div class="metric" id="temperatureValue">--<small>°C</small></div>
+            <div class="metric-caption" id="temperatureCaption">Waiting for weather data...</div>
+          </article>
+
+          <article class="weather-card">
+            <div class="card-top">
+              <span class="card-label">Waterlogging risk</span>
+              <span class="card-icon teal">🛡️</span>
+            </div>
+            <div class="metric" id="waterloggingRiskValue">Medium</div>
+            <div class="metric-caption" id="waterloggingRiskCaption">Illustrative estimate · not an official alert</div>
+          </article>
+        </section>
+
+        <div class="section-title">
+          <h3>Risk status overview</h3>
+          <span>Demo area classifications</span>
+        </div>
+
+
+<section class="risk-grid" id="riskGrid">
+  <article class="risk-card">
+    <span class="risk-dot low"></span>
+    <div>
+      <strong>Low risk</strong>
+      <span id="lowRiskCount">Loading reports...</span>
+    </div>
+  </article>
+
+  <article class="risk-card">
+    <span class="risk-dot medium"></span>
+    <div>
+      <strong>Medium risk</strong>
+      <span id="mediumRiskCount">Loading reports...</span>
+    </div>
+  </article>
+
+  <article class="risk-card">
+    <span class="risk-dot high"></span>
+    <div>
+      <strong>High risk</strong>
+      <span id="highRiskCount">Loading reports...</span>
+    </div>
+  </article>
+</section>
+
+        <section class="panel hotspot-panel" aria-labelledby="hotspotHeading">
+          <div class="panel-header">
+            <div>
+              <h3 id="hotspotHeading">Report hotspots</h3>
+              <p>DBSCAN on saved reports with valid coordinates only</p>
+            </div>
+            <span class="demo-pill">350 M · MIN 3</span>
+          </div>
+          <div class="hotspot-content" id="hotspotSummary" role="status" aria-live="polite">
+            Waiting for saved reports...
+          </div>
+        </section>
+
+        <div class="section-title" id="risk-map">
+          <h3>Risk map &amp; route planning</h3>
+          <span>Interactive map · Pimpri-Chinchwad</span>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Waterlogging risk map</h3>
+                <p>Interactive map with community waterlogging reports</p>
+              </div>
+              <span class="demo-pill">OPENSTREETMAP</span>
+            </div>
+            <div id="waterloggingMap"></div>
+            <div class="route-planner" id="safe-routes">
+              <h4>Prototype route comparison</h4>
+              <p class="route-planner-note">
+                Uses a small sample graph of named demo junctions and straight illustrative links, not a real road network. A lower-risk route only estimates proximity to saved, coordinate-bearing reports; it does not guarantee safety.
+              </p>
+              <div class="route-controls">
+                <div>
+                  <label for="routeStart">Start intersection</label>
+                  <select id="routeStart"></select>
+                </div>
+                <div>
+                  <label for="routeDestination">Destination intersection</label>
+                  <select id="routeDestination"></select>
+                </div>
+                <button class="primary-button" id="planRoutesButton" type="button">
+                  Compare routes
+                </button>
+              </div>
+              <p class="route-plan-status" id="routePlanStatus" role="status" aria-live="polite">
+                Choose sample intersections and compare routes to see the prototype output.
+              </p>
+              <div class="route-results" id="routeResults"></div>
+            </div>
+            <p class="demo-footnote">
+              Report markers use only their submitted coordinates. Older reports without coordinates remain in history but have no map marker. This prototype does not provide real-road routing or real-time road-safety guidance.
+            </p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Recent waterlogging reports</h3>
+                <p>Reports saved in the database</p>
+              </div>
+              <span class="demo-pill">DATABASE</span>
+            </div>
+            <div class="reports-list" id="reportsList">
+              <p>Loading saved reports...</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel form-panel" id="report-waterlogging">
+          <div class="panel-header">
+            <div>
+              <h3>Report waterlogging</h3>
+              <p>Submit a report to save it in the AquaAlert database</p>
+            </div>
+          </div>
+
+          <form class="report-form" id="reportForm">
+            <div class="field">
+              <label for="reportLocation">Location or landmark</label>
+              <input id="reportLocation" name="location" type="text"
+                     placeholder="e.g. Pimpri Main Road" required>
+            </div>
+
+            <div class="field">
+              <label for="reportSeverity">Estimated severity</label>
+              <select id="reportSeverity" name="severity" required>
+                <option value="">Choose a level</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="reportLatitude">Latitude (optional)</label>
+              <input id="reportLatitude" name="latitude" type="number"
+                     min="-90" max="90" step="any" placeholder="e.g. 18.6298">
+            </div>
+
+            <div class="field">
+              <label for="reportLongitude">Longitude (optional)</label>
+              <input id="reportLongitude" name="longitude" type="number"
+                     min="-180" max="180" step="any" placeholder="e.g. 73.7997">
+            </div>
+
+            <div class="field full">
+              <label for="reportDetails">Additional details (optional)</label>
+              <textarea id="reportDetails" name="details"
+                        placeholder="Describe the waterlogging or nearby landmark"></textarea>
+            </div>
+
+            <p class="demo-footnote field full">
+              Enter coordinates only when you know the report location. Both values are required to place a marker; names are not geocoded automatically.
+            </p>
+
+            <div class="submit-row">
+              <button class="primary-button" type="submit">Submit report</button>
+              <span class="form-feedback" id="formFeedback" role="status" aria-live="polite"></span>
+            </div>
+          </form>
+
+          <div class="demo-footnote">
+            Reports are saved to the project database. This demo does not contact emergency services.
+          </div>
+        </section>
+
+        <section class="panel history-panel" id="history">
+          <div class="panel-header">
+            <div>
+              <h3>History</h3>
+              <p>Saved waterlogging reports</p>
+            </div>
+          </div>
+          <div class="history-content" id="historyContent">Loading saved reports...</div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/route-planner.js"></script>
+  <script src="/js/report-analytics.js"></script>
+  <script>
+    const menuToggle = document.getElementById("menuToggle");
+    const navLinks = document.querySelectorAll(".nav-link");
+    const reportForm = document.getElementById("reportForm");
+    const formFeedback = document.getElementById("formFeedback");
+    const logoutForm = document.querySelector('form[action="/logout"]');
+    let latestReports = [];
+    let routePlanRequested = false;
+
+    menuToggle.addEventListener("click", () => {
+      const isOpen = document.body.classList.toggle("nav-open");
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        navLinks.forEach((item) => item.classList.remove("active"));
+        link.classList.add("active");
+        document.body.classList.remove("nav-open");
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (
+        document.body.classList.contains("nav-open") &&
+        !event.target.closest(".sidebar") &&
+        !event.target.closest(".menu-toggle")
+      ) {
+        document.body.classList.remove("nav-open");
+      }
+    });
+
+    const escapeHtml = (value) =>
+      String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+
+    function readCookie(name) {
+      const entry = document.cookie.split("; ")
+        .find(cookie => cookie.startsWith(`${name}=`));
+      return entry ? decodeURIComponent(entry.slice(name.length + 1)) : null;
+    }
+
+    logoutForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = logoutForm.querySelector('button[type="submit"]');
+      const token = readCookie("XSRF-TOKEN");
+      if (!token) {
+        button.textContent = "Reload to log out";
+        return;
+      }
+
+      button.disabled = true;
+      try {
+        const response = await fetch("/logout", {
+          method: "POST",
+          headers: { "X-XSRF-TOKEN": token }
+        });
+        if (!response.ok) {
+          throw new Error(`Logout failed (HTTP ${response.status})`);
+        }
+        window.location.assign("/login?logout");
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = "Logout failed";
+        console.error("Logout error:", error);
+      }
+    });
+
+    const severityClass = (severity) => {
+      const value = String(severity || "").toLowerCase();
+      return ["low", "medium", "high"].includes(value) ? value : "medium";
+    };
+
+    const normalizedSeverity = (report) => {
+      const severity = String(report?.severity || "").trim().toUpperCase();
+      return ["LOW", "MEDIUM", "HIGH"].includes(severity) ? severity : null;
+    };
+
+    function refreshReportMarkers(reports) {
+      reportMarkerLayer.clearLayers();
+
+      reports.forEach((report) => {
+        if (!report || typeof report !== "object") {
+          return;
+        }
+
+        const severity = normalizedSeverity(report);
+        if (!severity) {
+          return;
+        }
+        if (typeof report.latitude !== "number"
+                || !Number.isFinite(report.latitude)
+                || report.latitude < -90 || report.latitude > 90
+                || typeof report.longitude !== "number"
+                || !Number.isFinite(report.longitude)
+                || report.longitude < -180 || report.longitude > 180) {
+          return;
+        }
+
+        const color = {
+          HIGH: "red",
+          MEDIUM: "orange",
+          LOW: "green"
+        }[severity];
+        const location = String(report.location || "Location not provided");
+        const description = String(
+          report.description || "No additional details provided."
+        );
+        const marker = L.circleMarker([report.latitude, report.longitude], {
+          radius: 9,
+          color,
+          fillColor: color,
+          fillOpacity: 0.8,
+          weight: 2
+        }).addTo(reportMarkerLayer);
+
+        marker.bindPopup(`
+          <strong>Waterlogging report</strong><br>
+          <b>Location:</b> ${escapeHtml(location)}<br>
+          <b>Severity:</b> ${escapeHtml(severity)}<br>
+          <b>Description:</b> ${escapeHtml(description)}
+        `);
+      });
+    }
+
+    function renderHotspotSummary(reports) {
+      const summary = document.getElementById("hotspotSummary");
+      const analysis = AquaAlertReportAnalytics.analyzeHotspots(reports);
+      summary.replaceChildren();
+
+      if (analysis.insufficientData) {
+        summary.textContent =
+          `Not enough coordinate-bearing reports for DBSCAN (need at least ${analysis.minPoints}; found ${analysis.eligibleReportCount}). Reports without valid coordinates are excluded.`;
+        return;
+      }
+
+      if (analysis.clusters.length === 0) {
+        summary.textContent =
+          `No report clusters found among ${analysis.eligibleReportCount} coordinate-bearing reports. ${analysis.noiseCount} isolated report(s) are not hotspots.`;
+        return;
+      }
+
+      const note = document.createElement("p");
+      note.textContent =
+        `Found ${analysis.clusters.length} hotspot cluster(s) from ${analysis.eligibleReportCount} eligible reports. DBSCAN uses a ${analysis.epsilonMeters} m radius and minimum ${analysis.minPoints} reports; this is descriptive, not a forecast.`;
+      summary.append(note);
+
+      for (const cluster of analysis.clusters) {
+        const entry = document.createElement("div");
+        entry.className = "hotspot-entry";
+        entry.textContent =
+          `Cluster ${cluster.id}: ${cluster.reportCount} reports near `
+          + `${cluster.center.latitude.toFixed(4)}, ${cluster.center.longitude.toFixed(4)} `
+          + `(HIGH ${cluster.severityCounts.HIGH}, MEDIUM ${cluster.severityCounts.MEDIUM}, LOW ${cluster.severityCounts.LOW})`;
+        summary.append(entry);
+      }
+    }
+
+    async function loadReports() {
+      const reportsList = document.getElementById("reportsList");
+      const historyContent = document.getElementById("historyContent");
+
+      try {
+        const response = await fetch("/api/reports");
+
+        if (response.redirected || !response.headers.get("content-type")?.includes("application/json")) {
+          throw new Error("Report API did not return JSON. Sign in again if your session expired.");
+        }
+        if (!response.ok) {
+          throw new Error(`Could not load reports (HTTP ${response.status})`);
+        }
+        const reports = await response.json();
+        if (!Array.isArray(reports)) {
+          throw new Error("Reports response must be a list");
+        }
+
+        latestReports = reports;
+        refreshReportMarkers(reports);
+        renderHotspotSummary(reports);
+
+        const lowCount = reports.filter(
+          report => normalizedSeverity(report) === "LOW"
+        ).length;
+        const mediumCount = reports.filter(
+          report => normalizedSeverity(report) === "MEDIUM"
+        ).length;
+        const highCount = reports.filter(
+          report => normalizedSeverity(report) === "HIGH"
+        ).length;
+
+        document.getElementById("lowRiskCount").textContent =
+          `${lowCount} reported areas`;
+        document.getElementById("mediumRiskCount").textContent =
+          `${mediumCount} reported areas`;
+        document.getElementById("highRiskCount").textContent =
+          `${highCount} reported areas`;
+
+        if (reports.length === 0) {
+          reportsList.innerHTML = "<p>No reports submitted yet.</p>";
+          historyContent.textContent = "No saved reports yet.";
+          return;
+        }
+
+        const newestFirst = reports.filter(
+          report => report && typeof report === "object"
+        ).slice().reverse();
+
+        reportsList.innerHTML = newestFirst.map((report) => {
+          const severity = String(report.severity || "Unknown");
+          const description = report.description || "No additional details provided.";
+
+          return `
+            <article class="report-item">
+              <span class="report-marker" aria-hidden="true">💧</span>
+              <div class="report-info">
+                <strong>${escapeHtml(report.location)}</strong>
+                <p>${escapeHtml(description)}</p>
+                <span class="report-time">Saved report · ID ${escapeHtml(report.id)}</span>
+              </div>
+              <span class="severity ${severityClass(severity)}">${escapeHtml(severity)}</span>
+            </article>
+          `;
+        }).join("");
+
+        historyContent.innerHTML = newestFirst.map((report) => `
+          <div class="history-entry">
+            <strong>${escapeHtml(report.location)}</strong><br>
+            Severity: ${escapeHtml(report.severity)} ·
+            Report ID: ${escapeHtml(report.id)}<br>
+            ${escapeHtml(report.description || "No additional details provided.")}
+          </div>
+        `).join("");
+
+        if (routePlanRequested) {
+          renderRouteComparison(latestReports);
+        }
+
+      } catch (error) {
+        reportsList.textContent = "Could not load reports. Check the backend connection.";
+        historyContent.textContent = "Could not load saved report history.";
+        document.getElementById("hotspotSummary").textContent =
+          "Hotspot analysis is unavailable because saved reports could not be loaded.";
+        console.error("Load reports error:", error);
+      }
+    }
+
+    reportForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const location = document.getElementById("reportLocation").value.trim();
+      const severity = document.getElementById("reportSeverity").value;
+      const description = document.getElementById("reportDetails").value.trim();
+      const latitudeValue = document.getElementById("reportLatitude").value.trim();
+      const longitudeValue = document.getElementById("reportLongitude").value.trim();
+      const submitButton = reportForm.querySelector('button[type="submit"]');
+
+      formFeedback.classList.remove("error");
+
+      if (!location || !severity) {
+        formFeedback.textContent = "Please enter a location and choose a severity.";
+        formFeedback.classList.add("error");
+        return;
+      }
+
+      if ((latitudeValue === "") !== (longitudeValue === "")) {
+        formFeedback.textContent = "Enter both latitude and longitude, or leave both blank.";
+        formFeedback.classList.add("error");
+        return;
+      }
+
+      const latitude = latitudeValue === "" ? null : Number(latitudeValue);
+      const longitude = longitudeValue === "" ? null : Number(longitudeValue);
+      if (latitude !== null
+          && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+              || !Number.isFinite(longitude) || longitude < -180 || longitude > 180)) {
+        formFeedback.textContent = "Enter a valid latitude (-90 to 90) and longitude (-180 to 180).";
+        formFeedback.classList.add("error");
+        return;
+      }
+
+      submitButton.disabled = true;
+      formFeedback.textContent = "Saving report...";
+
+      try {
+        const csrfToken = readCookie("XSRF-TOKEN");
+        if (!csrfToken) {
+          throw new Error("Security token is missing. Reload the dashboard and try again.");
+        }
+        const response = await fetch("/api/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-XSRF-TOKEN": csrfToken
+          },
+          body: JSON.stringify({
+            location: location,
+            severity: severity,
+            description: description,
+            latitude: latitude,
+            longitude: longitude
+          })
+        });
+
+        if (!response.ok) {
+          const errorBody = response.headers.get("content-type")?.includes("application/json")
+            ? await response.json()
+            : { message: await response.text() };
+          throw new Error(errorBody.message || `Report submission failed (HTTP ${response.status})`);
+        }
+
+        const savedReport = await response.json();
+
+        formFeedback.textContent =
+          "Report saved successfully! ID: " + savedReport.id;
+
+        reportForm.reset();
+        await loadReports();
+
+      } catch (error) {
+        formFeedback.textContent = error.message || "Could not save report.";
+        formFeedback.classList.add("error");
+        console.error("Submit report error:", error);
+
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+
+async function loadWeather() {
+  const status = document.getElementById("weatherStatus");
+  const rainfallValue = document.getElementById("rainfallValue");
+  const rainfallCaption = document.getElementById("rainfallCaption");
+  const temperatureValue = document.getElementById("temperatureValue");
+  const temperatureCaption = document.getElementById("temperatureCaption");
+
+  try {
+    const url =
+      "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=18.6298" +
+      "&longitude=73.7997" +
+      "&current=temperature_2m" +
+      "&hourly=precipitation" +
+      "&past_days=1" +
+      "&forecast_days=1" +
+      "&timezone=Asia%2FKolkata";
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error("Weather API request failed");
+    }
+
+    const data = await response.json();
+
+    const temperature = data.current.temperature_2m;
+    const times = data.hourly.time;
+    const precipitation = data.hourly.precipitation;
+
+    const now = new Date();
+    const last24Hours = now.getTime() - 24 * 60 * 60 * 1000;
+
+    let rainfall = 0;
+    let hoursFound = 0;
+
+    times.forEach((time, index) => {
+      const hourTime = new Date(time).getTime();
+
+      if (hourTime > last24Hours && hourTime <= now.getTime()) {
+        const amount = precipitation[index];
+
+        if (amount !== null && Number.isFinite(amount)) {
+          rainfall += amount;
+          hoursFound++;
+        }
+      }
+    });
+
+    temperatureValue.innerHTML =
+      `${Number(temperature).toFixed(1)}<small>°C</small>`;
+
+    temperatureCaption.textContent =
+      "Live weather · Open-Meteo";
+
+    if (hoursFound > 0) {
+      rainfallValue.innerHTML =
+        `${rainfall.toFixed(1)} <small>mm</small>`;
+
+      rainfallCaption.textContent =
+        "Previous 24 hours · Open-Meteo";
+    } else {
+      rainfallValue.innerHTML = `-- <small>mm</small>`;
+      rainfallCaption.textContent =
+        "Recent rainfall data unavailable";
+    }
+
+    status.textContent = "Live weather data";
+    const riskValue = document.getElementById("waterloggingRiskValue");
+const riskCaption = document.getElementById("waterloggingRiskCaption");
+
+try {
+  const reportsResponse = await fetch("/api/reports");
+  if (!reportsResponse.ok || reportsResponse.redirected
+      || !reportsResponse.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("Saved reports are unavailable");
+  }
+
+  const reports = await reportsResponse.json();
+  if (!Array.isArray(reports)) {
+    throw new Error("Reports response must be a list");
+  }
+
+  const highReports = reports.filter(
+    report => normalizedSeverity(report) === "HIGH"
+  ).length;
+  const mediumReports = reports.filter(
+    report => normalizedSeverity(report) === "MEDIUM"
+  ).length;
+
+  let risk = "Low";
+  if (rainfall >= 20 || highReports >= 2) {
+    risk = "High";
+  } else if (rainfall >= 5 || highReports >= 1 || mediumReports >= 2) {
+    risk = "Medium";
+  }
+
+  riskValue.textContent = risk;
+  riskCaption.textContent =
+    "Illustrative estimate based on rainfall and community reports";
+} catch (error) {
+  riskValue.textContent = "Unavailable";
+  riskCaption.textContent = "Risk estimate unavailable because saved reports could not be loaded";
+  console.error("Report-based risk estimate error:", error);
+}
+
+  } catch (error) {
+    console.error("Weather loading error:", error);
+
+    status.textContent = "Weather unavailable";
+    rainfallValue.innerHTML = `-- <small>mm</small>`;
+    rainfallCaption.textContent = "Could not load rainfall data";
+    temperatureValue.innerHTML = `--<small>°C</small>`;
+    temperatureCaption.textContent = "Could not load temperature";
+  }
+}
+
+loadWeather();
+
+const map = L.map("waterloggingMap").setView(
+  [18.6298, 73.7997],
+  13
+);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: 19
+}).addTo(map);
+
+const reportMarkerLayer = L.layerGroup().addTo(map);
+const routeOverlayLayer = L.layerGroup().addTo(map);
+const roadNetworkLayer = L.layerGroup().addTo(map);
+const sampleNetwork = AquaAlertRoutePlanner.SAMPLE_ROAD_NETWORK;
+
+sampleNetwork.edges.forEach((edge) => {
+  const from = sampleNetwork.nodes.find(node => node.id === edge.from);
+  const to = sampleNetwork.nodes.find(node => node.id === edge.to);
+  if (from && to) {
+    L.polyline(
+      [[from.latitude, from.longitude], [to.latitude, to.longitude]],
+      { color: "#778b9b", weight: 2, opacity: 0.65, dashArray: "3 6" }
+    ).addTo(roadNetworkLayer);
+  }
+});
+
+sampleNetwork.nodes.forEach((node) => {
+  L.circleMarker([node.latitude, node.longitude], {
+    radius: 4,
+    color: "#526b7c",
+    fillColor: "#ffffff",
+    fillOpacity: 1,
+    weight: 2
+  }).addTo(roadNetworkLayer).bindTooltip(`${node.name} (sample point)`);
+});
+
+function populateRouteIntersections() {
+  const startSelect = document.getElementById("routeStart");
+  const destinationSelect = document.getElementById("routeDestination");
+
+  for (const node of sampleNetwork.nodes) {
+    const optionLabel = `${node.name} (illustrative)`;
+    startSelect.add(new Option(optionLabel, node.id));
+    destinationSelect.add(new Option(optionLabel, node.id));
+  }
+
+  startSelect.value = sampleNetwork.nodes[0].id;
+  destinationSelect.value = sampleNetwork.nodes[2].id;
+}
+
+function routeSummary(label, route) {
+  const nodeNames = route.nodeIds.map((nodeId) =>
+    sampleNetwork.nodes.find(node => node.id === nodeId)?.name || nodeId
+  );
+  const routeLine = nodeNames.join(" → ");
+  return `${label}: ${routeLine} | ${route.distanceKm.toFixed(2)} km | observed report-proximity score ${route.riskScore.toFixed(1)}`;
+}
+
+function drawRoute(route, style) {
+  if (!route) {
+    return;
+  }
+  const coordinates = route.nodeIds.map((nodeId) => {
+    const node = sampleNetwork.nodes.find(item => item.id === nodeId);
+    return [node.latitude, node.longitude];
+  });
+  L.polyline(coordinates, style).addTo(routeOverlayLayer);
+}
+
+function renderRouteComparison(reports) {
+  const status = document.getElementById("routePlanStatus");
+  const results = document.getElementById("routeResults");
+  const startId = document.getElementById("routeStart").value;
+  const destinationId = document.getElementById("routeDestination").value;
+  routeOverlayLayer.clearLayers();
+  results.replaceChildren();
+
+  if (!Array.isArray(sampleNetwork.nodes) || sampleNetwork.nodes.length < 2
+      || !Array.isArray(sampleNetwork.edges) || sampleNetwork.edges.length === 0) {
+    status.textContent = "The sample road network is unavailable or incomplete; no route was generated.";
+    return;
+  }
+
+  const shortest = AquaAlertRoutePlanner.findRoute(
+    sampleNetwork, startId, destinationId, reports, "distance"
+  );
+  if (!shortest) {
+    status.textContent = "No connected sample route exists between those intersections.";
+    return;
+  }
+
+  drawRoute(shortest, { color: "#1769aa", weight: 6, opacity: 0.9 });
+  const shortestLine = document.createElement("p");
+  shortestLine.className = "route-result";
+  shortestLine.textContent = routeSummary("Shortest-distance route (blue)", shortest);
+  results.append(shortestLine);
+
+  const usableReportCount = AquaAlertRoutePlanner.validReports(reports).length;
+  if (usableReportCount === 0) {
+    status.textContent = "No saved reports have valid coordinates and severity. The sample shortest route is shown, but a lower-risk comparison is withheld; no reports does not mean no hazard.";
+    return;
+  }
+
+  const lowerRisk = AquaAlertRoutePlanner.findRoute(
+    sampleNetwork, startId, destinationId, reports, "lower-risk"
+  );
+  if (!lowerRisk) {
+    status.textContent = "No connected lower-risk sample route could be calculated.";
+    return;
+  }
+
+  drawRoute(lowerRisk, {
+    color: "#12a89d",
+    weight: 5,
+    opacity: 0.95,
+    dashArray: "10 8"
+  });
+  const lowerRiskLine = document.createElement("p");
+  lowerRiskLine.className = "route-result";
+  lowerRiskLine.textContent = routeSummary("Lower-risk estimate (teal dashed)", lowerRisk);
+  results.append(lowerRiskLine);
+  status.textContent = `Prototype comparison uses ${usableReportCount} saved report(s) with valid coordinates. Risk score is a heuristic from report severity and proximity to sample links, not a safety rating.`;
+}
+
+populateRouteIntersections();
+document.getElementById("planRoutesButton").addEventListener("click", () => {
+  routePlanRequested = true;
+  renderRouteComparison(latestReports);
+});
+
+setTimeout(() => map.invalidateSize(), 300);
+
+    loadReports();
+  </script>
+</body>
+</html>
